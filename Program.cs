@@ -2,10 +2,29 @@ using System;
 
 namespace OOPTask
 {
-    // Базовий клас "Людина"
-    public class Person
+    // Інтерфейс IPerson - визначає контракт для роботи з персональними даними
+    public interface IPerson
     {
-        // Поля класу
+        // Властивості
+        string FirstName { get; set; }
+        string LastName { get; set; }
+        string MiddleName { get; set; }
+        int Day { get; set; }
+        int Month { get; set; }
+        int Year { get; set; }
+
+        // Методи (тільки сигнатури)
+        void SetData(string firstName, string lastName, string middleName, 
+                    int day, int month, int year);
+        int CalculateAge(DateTime currentDate);
+        int CountLetterInLastName(char letter);
+        void DisplayInfo();
+    }
+
+    // Абстрактний клас Person - реалізує інтерфейс IPerson
+    public abstract class Person : IPerson
+    {
+        // Захищені поля
         protected string firstName;
         protected string lastName;
         protected string middleName;
@@ -13,7 +32,7 @@ namespace OOPTask
         protected int month;
         protected int year;
 
-        // Властивості
+        // Реалізація властивостей з інтерфейсу
         public string FirstName
         {
             get { return firstName; }
@@ -51,13 +70,13 @@ namespace OOPTask
         }
 
         // Конструктор за замовчуванням
-        public Person()
+        protected Person()
         {
         }
 
         // Конструктор з параметрами
-        public Person(string firstName, string lastName, string middleName, 
-                     int day, int month, int year)
+        protected Person(string firstName, string lastName, string middleName, 
+                        int day, int month, int year)
         {
             this.firstName = firstName;
             this.lastName = lastName;
@@ -67,7 +86,7 @@ namespace OOPTask
             this.year = year;
         }
 
-        // Метод задання відповідних даних
+        // Реалізація методу з інтерфейсу
         public virtual void SetData(string firstName, string lastName, string middleName, 
                                    int day, int month, int year)
         {
@@ -79,7 +98,7 @@ namespace OOPTask
             this.year = year;
         }
 
-        // Метод визначення віку людини за поточною датою
+        // Реалізація методу з інтерфейсу
         public virtual int CalculateAge(DateTime currentDate)
         {
             int age = currentDate.Year - year;
@@ -94,7 +113,7 @@ namespace OOPTask
             return age;
         }
 
-        // Метод обчислення кількості входжень літери в прізвище
+        // Реалізація методу з інтерфейсу
         public virtual int CountLetterInLastName(char letter)
         {
             int count = 0;
@@ -112,9 +131,13 @@ namespace OOPTask
             return count;
         }
 
-        // Метод виведення інформації про людину
+        // Абстрактний метод - повинен бути реалізований у похідних класах
+        public abstract string GetPersonType();
+
+        // Реалізація методу з інтерфейсу
         public virtual void DisplayInfo()
         {
+            Console.WriteLine($"Тип особи: {GetPersonType()}");
             Console.WriteLine($"Ім'я: {firstName}");
             Console.WriteLine($"Прізвище: {lastName}");
             Console.WriteLine($"По-батькові: {middleName}");
@@ -122,14 +145,60 @@ namespace OOPTask
         }
     }
 
-    // Похідний клас "Студент"
-    public class Student : Person
+    // Похідний клас RegularPerson (Звичайна людина) - наслідує абстрактний клас Person
+    public class RegularPerson : Person
+    {
+        private string occupation; // Професія
+
+        public string Occupation
+        {
+            get { return occupation; }
+            set { occupation = value; }
+        }
+
+        // Конструктор за замовчуванням
+        public RegularPerson() : base()
+        {
+        }
+
+        // Конструктор з параметрами
+        public RegularPerson(string firstName, string lastName, string middleName,
+                            int day, int month, int year, string occupation = "Не вказано")
+            : base(firstName, lastName, middleName, day, month, year)
+        {
+            this.occupation = occupation;
+        }
+
+        // Реалізація абстрактного методу
+        public override string GetPersonType()
+        {
+            return "Звичайна людина";
+        }
+
+        // Перевантажений метод виведення інформації
+        public override void DisplayInfo()
+        {
+            base.DisplayInfo();
+            Console.WriteLine($"Професія: {occupation}");
+        }
+    }
+
+    // Інтерфейс IStudent - розширює функціонал для студентів
+    public interface IStudent : IPerson
+    {
+        int AdmissionYear { get; set; }
+        string Specialty { get; set; }
+        int CalculateCourse(DateTime currentDate);
+    }
+
+    // Похідний клас Student (Студент) - наслідує абстрактний клас Person і реалізує IStudent
+    public class Student : Person, IStudent
     {
         // Додаткові поля класу
         protected int admissionYear;
         protected string specialty;
 
-        // Властивості
+        // Реалізація властивостей з інтерфейсу IStudent
         public int AdmissionYear
         {
             get { return admissionYear; }
@@ -156,11 +225,10 @@ namespace OOPTask
             this.specialty = specialty;
         }
 
-        // Перевантажений метод задання відповідних даних
-        public override void SetData(string firstName, string lastName, string middleName,
-                                    int day, int month, int year)
+        // Реалізація абстрактного методу
+        public override string GetPersonType()
         {
-            base.SetData(firstName, lastName, middleName, day, month, year);
+            return "Студент";
         }
 
         // Перевантажений метод задання даних з додатковими полями студента
@@ -172,19 +240,7 @@ namespace OOPTask
             this.specialty = specialty;
         }
 
-        // Перевантажений метод визначення віку студента
-        public override int CalculateAge(DateTime currentDate)
-        {
-            return base.CalculateAge(currentDate);
-        }
-
-        // Перевантажений метод обчислення кількості входжень літери в прізвище
-        public override int CountLetterInLastName(char letter)
-        {
-            return base.CountLetterInLastName(letter);
-        }
-
-        // Метод обчислення курсу навчання
+        // Реалізація методу з інтерфейсу IStudent - обчислення курсу навчання
         public int CalculateCourse(DateTime currentDate)
         {
             int course = currentDate.Year - admissionYear;
@@ -215,10 +271,12 @@ namespace OOPTask
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
 
-            Console.WriteLine("=== Робота з класами 'Людина' та 'Студент' ===\n");
+            Console.WriteLine("=== Робота з класами 'Людина' та 'Студент' ===");
+            Console.WriteLine("=== Демонстрація інтерфейсів та абстрактних класів ===\n");
 
-            // Створення об'єкта класу "Людина"
-            Person person = new Person("Іван", "Петренко", "Миколайович", 15, 6, 1980);
+            // Створення об'єкта класу "Звичайна людина" (похідний від абстрактного класу Person)
+            RegularPerson person = new RegularPerson("Іван", "Петренко", "Миколайович", 
+                                                     15, 6, 1980, "Інженер");
             
             Console.WriteLine("--- Інформація про людину ---");
             person.DisplayInfo();
@@ -235,7 +293,11 @@ namespace OOPTask
             
             DateTime currentDate = new DateTime(currentYear, currentMonth, currentDay);
 
-            // Створення об'єкта класу "Студент"
+            // Обчислення віку людини
+            int personAge = person.CalculateAge(currentDate);
+            Console.WriteLine($"\nВік людини станом на {currentDate.ToShortDateString()}: {personAge} років");
+
+            // Створення об'єкта класу "Студент" (реалізує інтерфейс IStudent)
             Student student = new Student("Олена", "Коваленко", "Петрівна", 
                                          20, 9, 2004, 2022, "Комп'ютерні науки");
             
@@ -274,6 +336,17 @@ namespace OOPTask
             
             int newAge = student.CalculateAge(currentDate);
             Console.WriteLine($"Вік студента: {newAge} років");
+
+            // Демонстрація поліморфізму через інтерфейс
+            Console.WriteLine("\n\n--- Демонстрація роботи через інтерфейс IPerson ---");
+            IPerson[] people = new IPerson[] { person, student };
+            
+            foreach (IPerson p in people)
+            {
+                Console.WriteLine($"\nТип: {((Person)p).GetPersonType()}");
+                Console.WriteLine($"ПІБ: {p.LastName} {p.FirstName} {p.MiddleName}");
+                Console.WriteLine($"Вік: {p.CalculateAge(currentDate)} років");
+            }
 
             Console.WriteLine("\n\nНатисніть будь-яку клавішу для завершення...");
             Console.ReadKey();
