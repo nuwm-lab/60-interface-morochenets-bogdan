@@ -2,110 +2,159 @@ using System;
 
 namespace OOPTask
 {
-    // Інтерфейс IPerson - визначає контракт для роботи з персональними даними
+    // ============================================
+    // ІНТЕРФЕЙСИ
+    // ============================================
+
+    /// <summary>
+    /// Інтерфейс для роботи з персональними даними людини
+    /// </summary>
     public interface IPerson
     {
-        // Властивості
         string FirstName { get; set; }
         string LastName { get; set; }
         string MiddleName { get; set; }
-        int Day { get; set; }
-        int Month { get; set; }
-        int Year { get; set; }
+        DateTime DateOfBirth { get; set; }
 
-        // Методи (тільки сигнатури)
-        void SetData(string firstName, string lastName, string middleName, 
-                    int day, int month, int year);
+        void SetData(string firstName, string lastName, string middleName, DateTime dateOfBirth);
         int CalculateAge(DateTime currentDate);
         int CountLetterInLastName(char letter);
         void DisplayInfo();
     }
 
-    // Абстрактний клас Person - реалізує інтерфейс IPerson
-    public abstract class Person : IPerson
+    /// <summary>
+    /// Інтерфейс для студентів, розширює IPerson
+    /// </summary>
+    public interface IStudent : IPerson
     {
-        // Захищені поля
-        protected string firstName;
-        protected string lastName;
-        protected string middleName;
-        protected int day;
-        protected int month;
-        protected int year;
+        int AdmissionYear { get; set; }
+        string Specialty { get; set; }
+        int CalculateCourse(DateTime currentDate);
+    }
 
-        // Реалізація властивостей з інтерфейсу
+    /// <summary>
+    /// Інтерфейс для виведення інформації
+    /// </summary>
+    public interface IPrintable
+    {
+        string GetFormattedInfo();
+    }
+
+    // ============================================
+    // АБСТРАКТНИЙ КЛАС
+    // ============================================
+
+    /// <summary>
+    /// Абстрактний клас Person - базова реалізація для всіх людей
+    /// </summary>
+    public abstract class Person : IPerson, IPrintable, IDisposable
+    {
+        // Приватні поля з префіксом '_'
+        private string _firstName;
+        private string _lastName;
+        private string _middleName;
+        private DateTime _dateOfBirth;
+        private bool _disposed = false;
+
+        /// <summary>
+        /// Ім'я людини
+        /// </summary>
         public string FirstName
         {
-            get { return firstName; }
-            set { firstName = value; }
+            get => _firstName;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Ім'я не може бути порожнім");
+                _firstName = value;
+            }
         }
 
+        /// <summary>
+        /// Прізвище людини
+        /// </summary>
         public string LastName
         {
-            get { return lastName; }
-            set { lastName = value; }
+            get => _lastName;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Прізвище не може бути порожнім");
+                _lastName = value;
+            }
         }
 
+        /// <summary>
+        /// По-батькові людини
+        /// </summary>
         public string MiddleName
         {
-            get { return middleName; }
-            set { middleName = value; }
+            get => _middleName;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("По-батькові не може бути порожнім");
+                _middleName = value;
+            }
         }
 
-        public int Day
+        /// <summary>
+        /// Дата народження
+        /// </summary>
+        public DateTime DateOfBirth
         {
-            get { return day; }
-            set { day = value; }
+            get => _dateOfBirth;
+            set
+            {
+                if (value > DateTime.Now)
+                    throw new ArgumentException("Дата народження не може бути в майбутньому");
+                if (value.Year < 1900)
+                    throw new ArgumentException("Дата народження занадто давня");
+                _dateOfBirth = value;
+            }
         }
 
-        public int Month
-        {
-            get { return month; }
-            set { month = value; }
-        }
-
-        public int Year
-        {
-            get { return year; }
-            set { year = value; }
-        }
-
-        // Конструктор за замовчуванням
+        /// <summary>
+        /// Захищений конструктор для похідних класів
+        /// </summary>
         protected Person()
         {
         }
 
-        // Конструктор з параметрами
-        protected Person(string firstName, string lastName, string middleName, 
-                        int day, int month, int year)
+        /// <summary>
+        /// Захищений конструктор з параметрами
+        /// </summary>
+        protected Person(string firstName, string lastName, string middleName, DateTime dateOfBirth)
         {
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.middleName = middleName;
-            this.day = day;
-            this.month = month;
-            this.year = year;
+            FirstName = firstName;
+            LastName = lastName;
+            MiddleName = middleName;
+            DateOfBirth = dateOfBirth;
         }
 
-        // Реалізація методу з інтерфейсу
-        public virtual void SetData(string firstName, string lastName, string middleName, 
-                                   int day, int month, int year)
+        /// <summary>
+        /// Задання персональних даних
+        /// </summary>
+        public virtual void SetData(string firstName, string lastName, string middleName, DateTime dateOfBirth)
         {
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.middleName = middleName;
-            this.day = day;
-            this.month = month;
-            this.year = year;
+            FirstName = firstName;
+            LastName = lastName;
+            MiddleName = middleName;
+            DateOfBirth = dateOfBirth;
         }
 
-        // Реалізація методу з інтерфейсу
+        /// <summary>
+        /// Обчислення віку людини на задану дату
+        /// </summary>
         public virtual int CalculateAge(DateTime currentDate)
         {
-            int age = currentDate.Year - year;
+            if (currentDate < _dateOfBirth)
+                throw new ArgumentException("Поточна дата не може бути раніше дати народження");
 
-            // Перевірка, чи вже минув день народження в цьому році
-            if (currentDate.Month < month || 
-                (currentDate.Month == month && currentDate.Day < day))
+            int age = currentDate.Year - _dateOfBirth.Year;
+
+            if (currentDate.Month < _dateOfBirth.Month ||
+                (currentDate.Month == _dateOfBirth.Month && currentDate.Day < _dateOfBirth.Day))
             {
                 age--;
             }
@@ -113,11 +162,16 @@ namespace OOPTask
             return age;
         }
 
-        // Реалізація методу з інтерфейсу
+        /// <summary>
+        /// Підрахунок кількості входжень літери в прізвище
+        /// </summary>
         public virtual int CountLetterInLastName(char letter)
         {
+            if (string.IsNullOrEmpty(_lastName))
+                return 0;
+
             int count = 0;
-            string lowerLastName = lastName.ToLower();
+            string lowerLastName = _lastName.ToLower();
             char lowerLetter = char.ToLower(letter);
 
             foreach (char c in lowerLastName)
@@ -131,121 +185,220 @@ namespace OOPTask
             return count;
         }
 
-        // Абстрактний метод - повинен бути реалізований у похідних класах
+        /// <summary>
+        /// Абстрактний метод - тип особи
+        /// </summary>
         public abstract string GetPersonType();
 
-        // Реалізація методу з інтерфейсу
+        /// <summary>
+        /// Виведення базової інформації
+        /// </summary>
         public virtual void DisplayInfo()
         {
             Console.WriteLine($"Тип особи: {GetPersonType()}");
-            Console.WriteLine($"Ім'я: {firstName}");
-            Console.WriteLine($"Прізвище: {lastName}");
-            Console.WriteLine($"По-батькові: {middleName}");
-            Console.WriteLine($"Дата народження: {day:D2}.{month:D2}.{year}");
+            Console.WriteLine($"Ім'я: {_firstName}");
+            Console.WriteLine($"Прізвище: {_lastName}");
+            Console.WriteLine($"По-батькові: {_middleName}");
+            Console.WriteLine($"Дата народження: {_dateOfBirth:dd.MM.yyyy}");
+        }
+
+        /// <summary>
+        /// Отримання форматованої інформації (реалізація IPrintable)
+        /// </summary>
+        public virtual string GetFormattedInfo()
+        {
+            return $"{GetPersonType()}: {_lastName} {_firstName} {_middleName}, {_dateOfBirth:dd.MM.yyyy}";
+        }
+
+        /// <summary>
+        /// Реалізація IDisposable
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Захищений метод для очищення ресурсів
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Очищення керованих ресурсів
+                    Console.WriteLine($"Об'єкт {GetPersonType()} '{_lastName}' звільнено");
+                }
+                _disposed = true;
+            }
+        }
+
+        /// <summary>
+        /// Деструктор
+        /// </summary>
+        ~Person()
+        {
+            Dispose(false);
         }
     }
 
-    // Похідний клас RegularPerson (Звичайна людина) - наслідує абстрактний клас Person
+    // ============================================
+    // ПОХІДНІ КЛАСИ
+    // ============================================
+
+    /// <summary>
+    /// Клас звичайної людини
+    /// </summary>
     public class RegularPerson : Person
     {
-        private string occupation; // Професія
+        private string _occupation;
 
+        /// <summary>
+        /// Професія людини
+        /// </summary>
         public string Occupation
         {
-            get { return occupation; }
-            set { occupation = value; }
+            get => _occupation;
+            set => _occupation = value ?? "Не вказано";
         }
 
-        // Конструктор за замовчуванням
+        /// <summary>
+        /// Конструктор за замовчуванням
+        /// </summary>
         public RegularPerson() : base()
         {
+            _occupation = "Не вказано";
         }
 
-        // Конструктор з параметрами
+        /// <summary>
+        /// Конструктор з параметрами
+        /// </summary>
         public RegularPerson(string firstName, string lastName, string middleName,
-                            int day, int month, int year, string occupation = "Не вказано")
-            : base(firstName, lastName, middleName, day, month, year)
+                            DateTime dateOfBirth, string occupation = "Не вказано")
+            : base(firstName, lastName, middleName, dateOfBirth)
         {
-            this.occupation = occupation;
+            Occupation = occupation;
         }
 
-        // Реалізація абстрактного методу
+        /// <summary>
+        /// Реалізація абстрактного методу
+        /// </summary>
         public override string GetPersonType()
         {
             return "Звичайна людина";
         }
 
-        // Перевантажений метод виведення інформації
+        /// <summary>
+        /// Перевизначений метод виведення інформації
+        /// </summary>
         public override void DisplayInfo()
         {
             base.DisplayInfo();
-            Console.WriteLine($"Професія: {occupation}");
+            Console.WriteLine($"Професія: {_occupation}");
+        }
+
+        /// <summary>
+        /// Перевизначений метод форматованого виводу
+        /// </summary>
+        public override string GetFormattedInfo()
+        {
+            return base.GetFormattedInfo() + $", Професія: {_occupation}";
         }
     }
 
-    // Інтерфейс IStudent - розширює функціонал для студентів
-    public interface IStudent : IPerson
-    {
-        int AdmissionYear { get; set; }
-        string Specialty { get; set; }
-        int CalculateCourse(DateTime currentDate);
-    }
-
-    // Похідний клас Student (Студент) - наслідує абстрактний клас Person і реалізує IStudent
+    /// <summary>
+    /// Клас студента
+    /// </summary>
     public class Student : Person, IStudent
     {
-        // Додаткові поля класу
-        protected int admissionYear;
-        protected string specialty;
+        private int _admissionYear;
+        private string _specialty;
 
-        // Реалізація властивостей з інтерфейсу IStudent
+        /// <summary>
+        /// Рік вступу до ВУЗу
+        /// </summary>
         public int AdmissionYear
         {
-            get { return admissionYear; }
-            set { admissionYear = value; }
+            get => _admissionYear;
+            set
+            {
+                if (value < 1900 || value > DateTime.Now.Year + 1)
+                    throw new ArgumentException("Некоректний рік вступу");
+                _admissionYear = value;
+            }
         }
 
+        /// <summary>
+        /// Спеціальність студента
+        /// </summary>
         public string Specialty
         {
-            get { return specialty; }
-            set { specialty = value; }
+            get => _specialty;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Спеціальність не може бути порожньою");
+                _specialty = value;
+            }
         }
 
-        // Конструктор за замовчуванням
+        /// <summary>
+        /// Конструктор за замовчуванням
+        /// </summary>
         public Student() : base()
         {
         }
 
-        // Конструктор з параметрами
+        /// <summary>
+        /// Конструктор з параметрами
+        /// </summary>
         public Student(string firstName, string lastName, string middleName,
-                      int day, int month, int year, int admissionYear, string specialty)
-            : base(firstName, lastName, middleName, day, month, year)
+                      DateTime dateOfBirth, int admissionYear, string specialty)
+            : base(firstName, lastName, middleName, dateOfBirth)
         {
-            this.admissionYear = admissionYear;
-            this.specialty = specialty;
+            AdmissionYear = admissionYear;
+            Specialty = specialty;
         }
 
-        // Реалізація абстрактного методу
+        /// <summary>
+        /// Реалізація абстрактного методу
+        /// </summary>
         public override string GetPersonType()
         {
             return "Студент";
         }
 
-        // Перевантажений метод задання даних з додатковими полями студента
-        public void SetData(string firstName, string lastName, string middleName,
-                           int day, int month, int year, int admissionYear, string specialty)
+        /// <summary>
+        /// Перевизначений метод задання даних
+        /// </summary>
+        public override void SetData(string firstName, string lastName, string middleName, DateTime dateOfBirth)
         {
-            base.SetData(firstName, lastName, middleName, day, month, year);
-            this.admissionYear = admissionYear;
-            this.specialty = specialty;
+            base.SetData(firstName, lastName, middleName, dateOfBirth);
         }
 
-        // Реалізація методу з інтерфейсу IStudent - обчислення курсу навчання
+        /// <summary>
+        /// Додатковий метод задання даних студента
+        /// </summary>
+        public void SetStudentData(string firstName, string lastName, string middleName,
+                                  DateTime dateOfBirth, int admissionYear, string specialty)
+        {
+            base.SetData(firstName, lastName, middleName, dateOfBirth);
+            AdmissionYear = admissionYear;
+            Specialty = specialty;
+        }
+
+        /// <summary>
+        /// Обчислення курсу навчання
+        /// </summary>
         public int CalculateCourse(DateTime currentDate)
         {
-            int course = currentDate.Year - admissionYear;
-            
-            // Якщо поточний місяць до вересня, то це попередній курс
+            if (currentDate.Year < _admissionYear)
+                return 0;
+
+            int course = currentDate.Year - _admissionYear;
+
             if (currentDate.Month < 9)
             {
                 course--;
@@ -254,101 +407,179 @@ namespace OOPTask
             return Math.Max(0, course);
         }
 
-        // Перевантажений метод виведення інформації про студента
+        /// <summary>
+        /// Перевизначений метод виведення інформації
+        /// </summary>
         public override void DisplayInfo()
         {
             base.DisplayInfo();
-            Console.WriteLine($"Рік вступу: {admissionYear}");
-            Console.WriteLine($"Спеціальність: {specialty}");
+            Console.WriteLine($"Рік вступу: {_admissionYear}");
+            Console.WriteLine($"Спеціальність: {_specialty}");
+        }
+
+        /// <summary>
+        /// Перевизначений метод форматованого виводу
+        /// </summary>
+        public override string GetFormattedInfo()
+        {
+            return base.GetFormattedInfo() + $", Рік вступу: {_admissionYear}, Спеціальність: {_specialty}";
         }
     }
 
-    // Головний клас програми
+    // ============================================
+    // ГОЛОВНА ПРОГРАМА
+    // ============================================
+
+    /// <summary>
+    /// Головний клас програми
+    /// </summary>
     class Program
     {
+        /// <summary>
+        /// Безпечне зчитування цілого числа з консолі
+        /// </summary>
+        static int ReadInt(string prompt, int min = int.MinValue, int max = int.MaxValue)
+        {
+            int result;
+            while (true)
+            {
+                Console.Write(prompt);
+                if (int.TryParse(Console.ReadLine(), out result))
+                {
+                    if (result >= min && result <= max)
+                        return result;
+                    Console.WriteLine($"Число має бути в діапазоні від {min} до {max}");
+                }
+                else
+                {
+                    Console.WriteLine("Некоректне введення. Спробуйте ще раз.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Безпечне зчитування дати з консолі
+        /// </summary>
+        static DateTime ReadDate(string prompt)
+        {
+            while (true)
+            {
+                Console.WriteLine(prompt);
+                int day = ReadInt("День (1-31): ", 1, 31);
+                int month = ReadInt("Місяць (1-12): ", 1, 12);
+                int year = ReadInt("Рік: ", 1900, DateTime.Now.Year + 1);
+
+                try
+                {
+                    return new DateTime(year, month, day);
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    Console.WriteLine("Некоректна дата. Спробуйте ще раз.\n");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Головний метод програми
+        /// </summary>
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
 
-            Console.WriteLine("=== Робота з класами 'Людина' та 'Студент' ===");
-            Console.WriteLine("=== Демонстрація інтерфейсів та абстрактних класів ===\n");
+            Console.WriteLine("╔════════════════════════════════════════════════════════╗");
+            Console.WriteLine("║   Робота з класами 'Людина' та 'Студент'              ║");
+            Console.WriteLine("║   Демонстрація інтерфейсів та абстрактних класів      ║");
+            Console.WriteLine("╚════════════════════════════════════════════════════════╝\n");
 
-            // Створення об'єкта класу "Звичайна людина" (похідний від абстрактного класу Person)
-            RegularPerson person = new RegularPerson("Іван", "Петренко", "Миколайович", 
-                                                     15, 6, 1980, "Інженер");
-            
-            Console.WriteLine("--- Інформація про людину ---");
-            person.DisplayInfo();
-            Console.WriteLine();
-
-            // Введення поточної дати
-            Console.WriteLine("Введіть поточну дату для обчислення віку:");
-            Console.Write("День: ");
-            int currentDay = int.Parse(Console.ReadLine());
-            Console.Write("Місяць: ");
-            int currentMonth = int.Parse(Console.ReadLine());
-            Console.Write("Рік: ");
-            int currentYear = int.Parse(Console.ReadLine());
-            
-            DateTime currentDate = new DateTime(currentYear, currentMonth, currentDay);
-
-            // Обчислення віку людини
-            int personAge = person.CalculateAge(currentDate);
-            Console.WriteLine($"\nВік людини станом на {currentDate.ToShortDateString()}: {personAge} років");
-
-            // Створення об'єкта класу "Студент" (реалізує інтерфейс IStudent)
-            Student student = new Student("Олена", "Коваленко", "Петрівна", 
-                                         20, 9, 2004, 2022, "Комп'ютерні науки");
-            
-            Console.WriteLine("\n--- Інформація про студента ---");
-            student.DisplayInfo();
-            
-            // Визначення віку студента
-            int studentAge = student.CalculateAge(currentDate);
-            Console.WriteLine($"\nВік студента станом на {currentDate.ToShortDateString()}: {studentAge} років");
-            
-            // Визначення курсу студента
-            int course = student.CalculateCourse(currentDate);
-            Console.WriteLine($"Курс навчання: {course}");
-
-            // Підрахунок кількості входжень літери в прізвище людини
-            Console.Write("\nВведіть літеру для підрахунку в прізвищі людини: ");
-            char letter = Console.ReadKey().KeyChar;
-            Console.WriteLine();
-            
-            int countPerson = person.CountLetterInLastName(letter);
-            Console.WriteLine($"Кількість літери '{letter}' в прізвищі '{person.LastName}': {countPerson}");
-
-            // Підрахунок кількості входжень літери в прізвище студента
-            Console.Write("\nВведіть літеру для підрахунку в прізвищі студента: ");
-            char letterStudent = Console.ReadKey().KeyChar;
-            Console.WriteLine();
-            
-            int countStudent = student.CountLetterInLastName(letterStudent);
-            Console.WriteLine($"Кількість літери '{letterStudent}' в прізвищі '{student.LastName}': {countStudent}");
-
-            // Демонстрація методу SetData
-            Console.WriteLine("\n\n--- Демонстрація методу SetData ---");
-            student.SetData("Марія", "Шевченко", "Іванівна", 
-                           10, 3, 2003, 2021, "Інформаційні технології");
-            student.DisplayInfo();
-            
-            int newAge = student.CalculateAge(currentDate);
-            Console.WriteLine($"Вік студента: {newAge} років");
-
-            // Демонстрація поліморфізму через інтерфейс
-            Console.WriteLine("\n\n--- Демонстрація роботи через інтерфейс IPerson ---");
-            IPerson[] people = new IPerson[] { person, student };
-            
-            foreach (IPerson p in people)
+            try
             {
-                Console.WriteLine($"\nТип: {((Person)p).GetPersonType()}");
-                Console.WriteLine($"ПІБ: {p.LastName} {p.FirstName} {p.MiddleName}");
-                Console.WriteLine($"Вік: {p.CalculateAge(currentDate)} років");
+                // Створення об'єкта звичайної людини
+                using (RegularPerson person = new RegularPerson("Іван", "Петренко", "Миколайович",
+                                                                new DateTime(1980, 6, 15), "Інженер"))
+                {
+                    Console.WriteLine("--- Інформація про людину ---");
+                    person.DisplayInfo();
+                    Console.WriteLine();
+
+                    // Введення поточної дати
+                    DateTime currentDate = ReadDate("\nВведіть поточну дату для обчислення віку:");
+
+                    // Обчислення віку людини
+                    int personAge = person.CalculateAge(currentDate);
+                    Console.WriteLine($"\n✓ Вік людини станом на {currentDate:dd.MM.yyyy}: {personAge} років");
+
+                    // Створення об'єкта студента
+                    using (Student student = new Student("Олена", "Коваленко", "Петрівна",
+                                                        new DateTime(2004, 9, 20), 2022, "Комп'ютерні науки"))
+                    {
+                        Console.WriteLine("\n--- Інформація про студента ---");
+                        student.DisplayInfo();
+
+                        // Визначення віку та курсу студента
+                        int studentAge = student.CalculateAge(currentDate);
+                        int course = student.CalculateCourse(currentDate);
+                        Console.WriteLine($"\n✓ Вік студента станом на {currentDate:dd.MM.yyyy}: {studentAge} років");
+                        Console.WriteLine($"✓ Курс навчання: {course}");
+
+                        // Підрахунок літери в прізвищі людини
+                        Console.Write("\nВведіть літеру для підрахунку в прізвищі людини: ");
+                        char letter = Console.ReadKey().KeyChar;
+                        Console.WriteLine();
+
+                        int countPerson = person.CountLetterInLastName(letter);
+                        Console.WriteLine($"✓ Кількість літери '{letter}' в прізвищі '{person.LastName}': {countPerson}");
+
+                        // Підрахунок літери в прізвищі студента
+                        Console.Write("\nВведіть літеру для підрахунку в прізвищі студента: ");
+                        char letterStudent = Console.ReadKey().KeyChar;
+                        Console.WriteLine();
+
+                        int countStudent = student.CountLetterInLastName(letterStudent);
+                        Console.WriteLine($"✓ Кількість літери '{letterStudent}' в прізвищі '{student.LastName}': {countStudent}");
+
+                        // Демонстрація SetStudentData
+                        Console.WriteLine("\n\n--- Демонстрація методу SetStudentData ---");
+                        student.SetStudentData("Марія", "Шевченко", "Іванівна",
+                                             new DateTime(2003, 3, 10), 2021, "Інформаційні технології");
+                        student.DisplayInfo();
+
+                        int newAge = student.CalculateAge(currentDate);
+                        Console.WriteLine($"✓ Вік студента: {newAge} років");
+
+                        // Демонстрація поліморфізму через інтерфейс IPerson
+                        Console.WriteLine("\n\n--- Демонстрація роботи через інтерфейс IPerson ---");
+                        IPerson[] people = new IPerson[] { person, student };
+
+                        foreach (IPerson p in people)
+                        {
+                            Console.WriteLine($"\n✓ Тип: {((Person)p).GetPersonType()}");
+                            Console.WriteLine($"  ПІБ: {p.LastName} {p.FirstName} {p.MiddleName}");
+                            Console.WriteLine($"  Вік: {p.CalculateAge(currentDate)} років");
+                        }
+
+                        // Демонстрація IPrintable
+                        Console.WriteLine("\n\n--- Демонстрація інтерфейсу IPrintable ---");
+                        IPrintable[] printables = new IPrintable[] { person, student };
+
+                        foreach (IPrintable printable in printables)
+                        {
+                            Console.WriteLine($"✓ {printable.GetFormattedInfo()}");
+                        }
+                    }
+                }
+
+                Console.WriteLine("\n\n╔════════════════════════════════════════════════════════╗");
+                Console.WriteLine("║   Програма успішно завершена!                         ║");
+                Console.WriteLine("╚════════════════════════════════════════════════════════╝");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n❌ Помилка: {ex.Message}");
             }
 
-            Console.WriteLine("\n\nНатисніть будь-яку клавішу для завершення...");
+            Console.WriteLine("\nНатисніть будь-яку клавішу для завершення...");
             Console.ReadKey();
         }
     }
